@@ -32,6 +32,14 @@ fn main() {
             path
         }
         "--win" => path.to_string(),
+        "--msys" => {
+            let path = path.replace("\\\\", "/");
+            let path = path.replace("\\", "/");
+            let mid = path.find(":").expect("not find : in path");
+            let a = &path[..mid].to_lowercase();
+            let b = &path[(mid + 1)..];
+            format!("/{a}{b}")
+        }
         _ => path.to_string(),
     };
     set_clipboard(formats::Unicode, s).expect("copy to clipboard error");
