@@ -31,7 +31,17 @@ fn main() {
             let path = path.replace("\\", "/");
             path
         }
-        "--win" => path.to_string(),
+        "--win" => {
+            let path = if path.starts_with("/") {
+                let id = path.chars().nth(1).unwrap();
+                let rest = &path[2..];
+                let p = format!("{}:/{}", id, rest);
+                p
+            } else {
+                path.to_string()
+            };
+            path.to_string()
+        }
         "--msys" => {
             let path = path.replace("\\\\", "/");
             let path = path.replace("\\", "/");
