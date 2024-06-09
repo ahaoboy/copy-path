@@ -1,12 +1,32 @@
 [package]
 name = "copy-path"
-version = "0.1.2"
+version = "0.1.4"
 edition = "2021"
 description = "copy-path"
 license = "MIT"
+authors=["ahaoboy"]
+repository="https://github.com/ahaoboy/copy-path"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clipboard-win = "4.5.0"
+clipboard-win = "5.3.1"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.15.1"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = []
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-pc-windows-msvc"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
