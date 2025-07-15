@@ -87,7 +87,7 @@ jobs:
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           dry-run: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          bin: cross-env
+          bin: copy-path
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
           # ref: refs/tags/dummy
@@ -109,5 +109,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: cross-env-${{ steps.artifact-target.outputs.artifact-target }}
-          path: cross-env-${{ steps.artifact-target.outputs.artifact-target }}.*
+          name: copy-path-${{ steps.artifact-target.outputs.artifact-target }}
+          path: copy-path-${{ steps.artifact-target.outputs.artifact-target }}.*
