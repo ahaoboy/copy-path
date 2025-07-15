@@ -1,56 +1,59 @@
 #![windows_subsystem = "windows"]
 
 use clipboard_win::{formats, set_clipboard};
+use path_absolutize::Absolutize;
+use std::path::Path;
+
+fn normalize_path(path: &str) -> String {
+    path.replace("\\\\", "/").replace("\\", "/")
+}
+
+fn absolutize_path(path: &str) -> Option<String> {
+    Path::new(path)
+        .absolutize()
+        .ok()
+        .and_then(|p| p.to_str().map(|s| s.to_string()))
+}
 
 fn main() {
-    let contents: Vec<_> = std::env::args().collect();
-    if contents.len() == 2 {
-        let Some(path) = contents.get(1) else {
-            return;
-        };
-        set_clipboard(formats::Unicode, &path).expect("copy to clipboard error");
-        return;
-    }
-    let Some(ty) = contents.get(1) else {
-        return;
-    };
-
-    let Some(path) = contents.get(2) else {
-        return;
-    };
-
-    let s = match ty.as_str() {
-        "--name" => {
-            let path = path.replace("\\\\", "/");
-            let path = path.replace("\\", "/");
-            let path = path.split("/").last().expect("copy name error");
-            path.to_string()
-        }
-        "--path" => {
-            let path = path.replace("\\\\", "/");
-            let path = path.replace("\\", "/");
-            path
-        }
-        "--win" => {
-            let path = if path.starts_with("/") {
-                let id = path.chars().nth(1).unwrap();
-                let rest = &path[2..];
-                let p = format!("{}:/{}", id, rest);
-                p
-            } else {
-                path.to_string()
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let result = match args.as_slice() {
+        [path] => absolutize_path(path),
+        [ty, path] => {
+            let abs_path = match absolutize_path(path) {
+                Some(p) => p,
+                None => return,
             };
-            path.to_string()
+            match ty.as_str() {
+                "--name" => normalize_path(&abs_path)
+                    .split('/')
+                    .next_back()
+                    .map(|s| s.to_string()),
+                "--path" => Some(normalize_path(&abs_path)),
+                "--win" => {
+                    if abs_path.starts_with('/') && abs_path.len() > 2 {
+                        let id = abs_path.chars().nth(1).unwrap();
+                        let rest = &abs_path[2..];
+                        Some(format!("{id}:/{rest}"))
+                    } else {
+                        Some(abs_path)
+                    }
+                }
+                "--msys" => {
+                    let norm = normalize_path(&abs_path);
+                    norm.find(':').map(|mid| {
+                        let a = &norm[..mid].to_lowercase();
+                        let b = &norm[(mid + 1)..];
+                        format!("/{a}{b}")
+                    })
+                }
+                _ => Some(abs_path),
+            }
         }
-        "--msys" => {
-            let path = path.replace("\\\\", "/");
-            let path = path.replace("\\", "/");
-            let mid = path.find(":").expect("not find : in path");
-            let a = &path[..mid].to_lowercase();
-            let b = &path[(mid + 1)..];
-            format!("/{a}{b}")
-        }
-        _ => path.to_string(),
+        _ => None,
     };
-    set_clipboard(formats::Unicode, s).expect("copy to clipboard error");
+
+    if let Some(s) = result {
+        set_clipboard(formats::Unicode, &s).expect("copy to clipboard error");
+    }
 }
